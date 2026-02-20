@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lotre VIP - Riwayat Publik</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; padding: 20px; margin: 0; }
+        .box { background: #333; padding: 20px; border-radius: 15px; max-width: 380px; margin: auto; border: 2px solid gold; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        input { width: 85%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; font-size: 1rem; }
+        button { width: 90%; padding: 12px; margin: 5px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        button:active { transform: scale(0.95); }
+        .btn-blue { background: #0984e3; color: white; }
+        .btn-gold { background: #fdcb6e; color: black; }
+        .btn-red { background: #d63031; color: white; }
+        #gamePage, #adminPanel { display: none; }
+        .angka { font-size: 5.5rem; font-weight: bold; color: gold; margin: 15px 0; text-shadow: 0 0 15px gold; }
+        
+        /* Gaya Riwayat Tebakan */
+        .riwayat-box { margin-top: 20px; text-align: left; background: #222; padding: 15px; border-radius: 10px; border: 1px solid #444; }
+        .riwayat-item { padding: 8px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; font-size: 0.9rem; }
+        .riwayat-item:last-child { border: none; }
+        .tag-nama { color: #fdcb6e; font-weight: bold; }
+        .tag-angka { background: #444; padding: 2px 8px; border-radius: 4px; color: white; }
+    </style>
+</head>
+<body>
+
+<div id="loginPage" class="box" style="margin-top: 50px;">
+    <h2 style="color: gold;">VIP LOTTERY</h2>
+    <input type="text" id="idPemain" placeholder="ID Pemain">
+    <input type="password" id="passPemain" placeholder="Password">
+    <button class="btn-gold" onclick="prosesLogin()">MASUK BERMAIN</button>
+    <hr style="opacity: 0.2; margin: 20px 0;">
+    <button style="background: #444; color: #ccc; font-size: 0.75rem;" onclick="prosesDaftar()">DAFTAR AKUN (ADMIN ONLY)</button>
+</div>
+
+<div id="gamePage" class="box">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+        <span id="namaPemain" style="font-weight: bold;">User: -</span>
+        <span id="koinPemain" style="color: #55efc4; font-weight: bold;">💰 0</span>
+    </div>
+    
+    <div class="angka" id="layarAngka">--</div>
+    
+    <div id="uiInput">
+        <input type="number" id="tebakan" placeholder="Masukkan Angka 1-100">
+        <button class="btn-gold" id="btnKunci" onclick="kunciJawaban()">KUNCI JAWABAN (1 KOIN)</button>
+    </div>
+
+    <div class="riwayat-box">
+        <h4 style="margin: 0 0 10px 0; color: gold; text-align: center;">Riwayat Tebakan Ronde Ini</h4>
+        <div id="listTebakanPublik">Belum ada tebakan...</div>
+    </div>
+
+    <br>
+    <div style="cursor:pointer; opacity: 0.2; font-size: 0.7rem;" onclick="bukaAdmin()">⚙️ PANEL ADMIN</div>
+</div>
+
+<div id="adminPanel" class="box" style="margin-top: 20px; border-color: #d63031; background: #2d0000;">
+    <h3 style="color: white; margin-top: 0;">KONTROL ADMIN</h3>
+    <input type="text" id="idKoin" placeholder="ID Tujuan">
+    <input type="number" id="jmlKoin" placeholder="Jumlah Koin">
+    <button class="btn-blue" onclick="tambahKoin()">ISI KOIN PEMAIN</button>
+    <hr style="opacity: 0.3;">
+    <input type="number" id="angkaTarget" placeholder="Hasil Putaran">
+    <button class="btn-red" onclick="putarSekarang()">PUTAR DI SEMUA HP</button>
+    <button class="btn-red" style="background:black" onclick="resetRonde()">RESET/RONDE BARU</button>
+</div>
+
+<script>
+    // Konfigurasi Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyAkeywT1lnLHPLJUnfWGNtsSqiePttpzPo",
+        authDomain: "avatar-lotere.firebaseapp.com",
+        projectId: "avatar-lotere",
+        databaseURL: "https://avatar-lotere-default-rtdb.firebaseio.com" 
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const PIN = "#har142000";
+    let userSekarang = null;
+    let koinSekarang = 0;
+
+    // FUNGSI DAFTAR (ADMIN)
+    function prosesDaftar() {
+        if(prompt("Masukkan PIN Admin untuk mendaftar:") !== PIN) return alert("Akses Ditolak!");
+        let id = document.getElementById('idPemain').value.trim();
+        let ps = document.getElementById('passPemain').value.trim();
+        if(!id || !ps) return alert("Tulis ID & Pass di kolom login dulu!");
+        
+        db.ref('users/' + id).set({ password: ps, coins: 0 }).then(() => {
+            alert("Berhasil! Akun " + id + " siap digunakan.");
+        });
+    }
+
+    // FUNGSI LOGIN
+    function prosesLogin() {
+        let id = document.getElementById('idPemain').value.trim();
+        let ps = document.getElementById('passPemain').value.trim();
+        if(!id) return alert("ID Kosong!");
+
+        db.ref('users/' + id).once('value', (s) => {
+            let data = s.val();
+            if(data && data.password === ps) {
+                userSekarang = id;
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('gamePage').style.display = 'block';
+                document.getElementById('namaPemain').innerText = "👤 " + id;
+                mulaiPantauData();
+            } else {
+                alert("ID atau Password salah!");
+            }
+        });
+    }
+
+    function mulaiPantauData() {
+        // Pantau Koin Player
+        db.ref('users/' + userSekarang + '/coins').on('value', (s) => {
+            koinSekarang = s.val() || 0;
+            document.getElementById('koinPemain').innerText = "💰 " + koinSekarang;
+        });
+
+        // Pantau Perintah Putar/Reset
+        db.ref('roomControl').on('value', (s) => {
+            let d = s.val();
+            if(d && d.action === 'SPIN') animasiPutar(d.result);
+            if(d && d.action === 'RESET') location.reload();
+        });
+
+        // Pantau RIWAYAT TEBAKAN (Publik)
+        db.ref('guesses').on('value', (s) => {
+            let data = s.val();
+            let kontainer = document.getElementById('listTebakanPublik');
+            if(!data) {
+                kontainer.innerHTML = "<center style='color:#666'>Menunggu tebakan pertama...</center>";
+                return;
+            }
+            let html = "";
+            Object.keys(data).forEach(id => {
+                html += `<div class="riwayat-item">
+                            <span class="tag-nama">${id}</span>
+                            <span class="tag-angka">${data[id].guess}</span>
+                         </div>`;
+            });
+            kontainer.innerHTML = html;
+        });
+    }
+
+    function kunciJawaban() {
+        let t = document.getElementById('tebakan').value;
+        if(!t || t < 1 || t > 100) return alert("Angka harus 1-100!");
+        if(koinSekarang < 1) return alert("Koin tidak cukup!");
+        
+        db.ref('users/' + userSekarang).update({ coins: koinSekarang - 1 });
+        db.ref('guesses/' + userSekarang).set({ name: userSekarang, guess: t });
+        
+        document.getElementById('tebakan').disabled = true;
+        document.getElementById('btnKunci').disabled = true;
+        document.getElementById('btnKunci').innerText = "TERKUNCI: " + t;
+    }
+
+    // --- PANEL ADMIN ---
+    function bukaAdmin() {
+        if(prompt("Masukkan PIN Admin:") === PIN) {
+            document.getElementById('adminPanel').style.display = 'block';
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+    }
+
+    function tambahKoin() {
+        let id = document.getElementById('idKoin').value.trim();
+        let jm = parseInt(document.getElementById('jmlKoin').value);
+        if(!id || isNaN(jm)) return alert("Data tidak valid!");
+        
+        db.ref('users/' + id + '/coins').once('value', (s) => {
+            let skrg = s.val() || 0;
+            db.ref('users/' + id).update({ coins: skrg + jm });
+            alert("Koin " + id + " berhasil diisi!");
+        });
+    }
+
+    function putarSekarang() {
+        let res = document.getElementById('angkaTarget').value;
+        if(!res) return alert("Set angka target!");
+        db.ref('roomControl').set({ action: 'SPIN', result: parseInt(res) });
+    }
+
+    function animasiPutar(hasil) {
+        let lay = document.getElementById('layarAngka');
+        let c = 0;
+        let inv = setInterval(() => {
+            lay.innerText = Math.floor(Math.random() * 100) + 1;
+            c++;
+            if(c > 40) {
+                clearInterval(inv);
+                lay.innerText = hasil;
+                let t = document.getElementById('tebakan').value;
+                if(t == hasil && t !== "") {
+                    alert("JACKPOT! 🎉 Anda menang!");
+                    // Hadiah menang 1 koin
+                    db.ref('users/' + userSekarang).update({ coins: koinSekarang + 1 });
+                }
+            }
+        }, 50);
+    }
+
+    function resetRonde() {
+        if(confirm("Bersihkan semua tebakan ronde ini?")) {
+            db.ref('guesses').remove();
+            db.ref('roomControl').set({ action: 'RESET' });
+        }
+    }
+</script>
+</body>
+</html>
