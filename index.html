@@ -3,240 +3,391 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIP Lottery - 3 Numbers Edition</title>
+    <title>VIP Lottery Platinum - Auto System</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <style>
-        body { font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; padding: 20px; margin: 0; }
-        .box { background: #333; padding: 20px; border-radius: 15px; max-width: 380px; margin: auto; border: 2px solid gold; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        input { width: 85%; padding: 12px; margin: 8px 0; border-radius: 8px; border: none; font-size: 1rem; text-align: center; }
-        button { width: 90%; padding: 12px; margin: 5px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-gold { background: #fdcb6e; color: black; }
-        .btn-blue { background: #0984e3; color: white; }
-        .btn-red { background: #d63031; color: white; }
-        .btn-green { background: #00b894; color: white; }
-        #gamePage, #adminPanel { display: none; }
-        /* Ukuran font angka diperkecil sedikit agar muat 3 angka */
-        .angka { font-size: 3.5rem; font-weight: bold; color: gold; margin: 15px 0; text-shadow: 0 0 10px gold; letter-spacing: 2px; }
-        .riwayat-box { margin-top: 20px; text-align: left; background: #222; padding: 15px; border-radius: 10px; font-size: 0.85rem; max-height: 200px; overflow-y: auto; }
-        .riwayat-item { border-bottom: 1px solid #333; padding: 8px 0; display: flex; justify-content: space-between; }
-        .nav-tab { display: flex; justify-content: space-around; margin-bottom: 15px; background: #444; border-radius: 10px; padding: 5px; }
-        .nav-tab span { cursor: pointer; padding: 5px 10px; font-size: 0.8rem; border-radius: 5px; }
-        .nav-active { background: gold; color: black; font-weight: bold; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f0f0f; color: white; text-align: center; padding: 10px; margin: 0; }
+        .box { background: #1e1e1e; padding: 20px; border-radius: 20px; max-width: 420px; margin: auto; border: 1px solid #d4af37; box-shadow: 0 10px 30px rgba(0,0,0,0.7); }
+        .header-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #2a2a2a; padding: 10px; border-radius: 12px; }
+        input { width: 85%; padding: 12px; margin: 5px 0; border-radius: 10px; border: 1px solid #444; background: #111; color: gold; text-align: center; font-weight: bold; }
+        button { width: 90%; padding: 12px; margin: 8px 0; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; }
+        .btn-gold { background: linear-gradient(135deg, #d4af37 0%, #f9d976 100%); color: #000; }
+        .btn-red { background: #e74c3c; color: white; }
+        .btn-blue { background: #3498db; color: white; }
+        .angka-display { font-size: 3rem; font-weight: bold; color: gold; margin: 15px 0; text-shadow: 0 0 15px rgba(212, 175, 55, 0.5); font-family: 'Courier New', Courier, monospace; }
+        .timer-box { font-size: 0.9rem; color: #f1c40f; margin-bottom: 10px; background: rgba(241, 196, 15, 0.1); padding: 5px; border-radius: 5px; }
+        .nav-tabs { display: flex; background: #222; border-radius: 12px; margin-bottom: 15px; overflow: hidden; }
+        .tab { flex: 1; padding: 10px; cursor: pointer; font-size: 0.75rem; transition: 0.3s; }
+        .tab.active { background: gold; color: black; font-weight: bold; }
+        .list-container { text-align: left; background: #151515; padding: 15px; border-radius: 15px; font-size: 0.8rem; max-height: 250px; overflow-y: auto; border: 1px solid #333; }
+        .list-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #222; }
+        #adminPanel { background: #2d0a0a; border-color: #e74c3c; display: none; margin-top: 20px; }
+        .status-badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div id="loginPage" class="box" style="margin-top: 50px;">
-    <h2 style="color: gold;">VIP LOTTERY</h2>
-    <input type="text" id="idPemain" placeholder="ID Pemain">
-    <input type="password" id="passPemain" placeholder="Password">
-    <button class="btn-gold" onclick="prosesLogin()">MASUK BERMAIN</button>
-    <hr style="opacity: 0.2;">
-    <button style="background: #555; color: white; font-size: 0.7rem;" onclick="prosesDaftar()">DAFTAR AKUN (ADMIN)</button>
+    <h1 style="color: gold; margin-bottom: 5px;">VIP LOTTERY</h1>
+    <p style="font-size: 0.8rem; color: #888;">Premium Auto-System v3.0</p>
+    <input type="text" id="idPemain" placeholder="ID PEMAIN">
+    <input type="password" id="passPemain" placeholder="PASSWORD">
+    <button class="btn-gold" onclick="prosesLogin()">MASUK SERVER</button>
+    <button style="background: #333; color: #aaa; font-size: 0.7rem;" onclick="prosesDaftar()">REGISTER (ADMIN ONLY)</button>
 </div>
 
-<div id="gamePage" class="box">
-    <div class="nav-tab">
-        <span id="tabGame" class="nav-active" onclick="switchTab('GAME')">MAIN LOTRE</span>
-        <span id="tabWD" onclick="switchTab('WD')">WITHDRAW</span>
+<div id="gamePage" class="box" style="display: none;">
+    <div class="timer-box" id="nextDraw">Countdown: --:--:--</div>
+    
+    <div class="header-info">
+        <span id="displayID" style="color: gold;">👤 --</span>
+        <span id="displayKoin" style="color: #2ecc71;">💰 0</span>
     </div>
 
-    <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.9rem;">
-        <span id="namaPemain">User: -</span>
-        <span id="koinPemain" style="color: #55efc4; font-weight: bold;">💰 0</span>
+    <div class="nav-tabs">
+        <div class="tab active" id="tabG" onclick="showSection('GAME')">GAME</div>
+        <div class="tab" id="tabL" onclick="showSection('LEAD')">RANKING</div>
+        <div class="tab" id="tabW" onclick="showSection('WD')">WITHDRAW</div>
     </div>
 
-    <div id="contentGame">
-        <div class="angka" id="layarAngka">-- - -- - --</div>
-        <input type="number" id="tebakan" placeholder="Tebak Angka (1-100)">
-        <input type="number" id="jumlahBet" placeholder="Bet Koin (1-200)">
-        <button class="btn-gold" id="btnKunci" onclick="kunciJawaban()">KUNCI JAWABAN</button>
+    <div id="secGame">
+        <div class="angka-display" id="layarAngka">-- - -- - --</div>
         
-        <div class="riwayat-box">
-            <h4 style="margin:0; text-align:center; color: gold;">Riwayat Tebakan Ronde Ini</h4>
-            <div id="listTebakan">Belum ada tebakan.</div>
+        <div style="background: #252525; padding: 10px; border-radius: 12px; margin-bottom: 10px; border-left: 4px solid gold;">
+            <p style="font-size: 0.7rem; margin: 0 0 5px 0; text-align: left;">JAWABAN 1:</p>
+            <div style="display: flex; gap: 5px;">
+                <input type="number" id="tebak1" placeholder="Angka 1-80" style="width: 45%;">
+                <input type="number" id="bet1" placeholder="Koin" style="width: 45%;">
+            </div>
+        </div>
+
+        <div style="background: #252525; padding: 10px; border-radius: 12px; margin-bottom: 10px; border-left: 4px solid #3498db;">
+            <p style="font-size: 0.7rem; margin: 0 0 5px 0; text-align: left;">JAWABAN 2:</p>
+            <div style="display: flex; gap: 5px;">
+                <input type="number" id="tebak2" placeholder="Angka 1-80" style="width: 45%;">
+                <input type="number" id="bet2" placeholder="Koin" style="width: 45%;">
+            </div>
+        </div>
+
+        <button class="btn-gold" id="btnKunci" onclick="kunciGanda()">KUNCI SEMUA JAWABAN</button>
+
+        <div class="list-container">
+            <h4 style="margin: 0 0 10px 0; color: gold; text-align: center; font-size: 0.75rem;">LIVE BETS</h4>
+            <div id="listTebakan"></div>
         </div>
     </div>
 
-    <div id="contentWD" style="display: none;">
-        <h3 style="color: #00b894;">TARIK KOIN (WD)</h3>
-        <input type="number" id="wdAmount" placeholder="Jumlah WD">
-        <button class="btn-green" onclick="prosesWithdraw()">AJUKAN WITHDRAW</button>
-        <div class="riwayat-box"><div id="myWDList"></div></div>
+    <div id="secLead" style="display: none;">
+        <h4 style="color: gold;">TOP SALDO</h4>
+        <div class="list-container" id="leadSaldo" style="margin-bottom: 15px;"></div>
+        <h4 style="color: #3498db;">TOP WINNERS</h4>
+        <div class="list-container" id="leadWin"></div>
     </div>
 
-    <br>
-    <div style="cursor:pointer; opacity: 0.2; font-size: 0.7rem;" onclick="bukaAdmin()">⚙️ PANEL ADMIN</div>
+    <div id="secWD" style="display: none;">
+        <h3 style="color: #2ecc71;">WITHDRAWAL</h3>
+        <p style="font-size: 0.7rem; color: #888;">Min: 1 | Max: 2000 per WD</p>
+        <input type="number" id="wdAmount" placeholder="Nominal Koin">
+        <button class="btn-blue" onclick="prosesWithdraw()">AJUKAN PENARIKAN</button>
+        <div class="list-container">
+            <h4 style="margin: 0 0 10px 0; font-size: 0.75rem;">RIWAYAT WD SAYA</h4>
+            <div id="myWDList"></div>
+        </div>
+    </div>
+
+    <div style="margin-top: 15px; opacity: 0.3; font-size: 0.6rem; cursor: pointer;" onclick="bukaAdmin()">ADMIN PANEL</div>
 </div>
 
-<div id="adminPanel" class="box" style="margin-top: 20px; border-color: #d63031; background: #2d0000;">
+<div id="adminPanel" class="box">
     <h3>ADMIN CONTROL</h3>
-    <input type="text" id="idKoin" placeholder="ID Pemain">
-    <input type="number" id="jmlKoin" placeholder="Jumlah Koin">
-    <button class="btn-blue" onclick="tambahKoin()">ISI KOIN</button>
-    <hr style="opacity: 0.3;">
-    <p style="font-size: 0.8rem; margin:0;">Input 3 Angka Target:</p>
+    <input type="text" id="admID" placeholder="ID Tujuan">
+    <input type="number" id="admQty" placeholder="Jumlah Koin">
+    <button class="btn-blue" onclick="admKoin()">TAMBAH KOIN</button>
+    <hr style="border-color: #444;">
+    <p style="font-size: 0.7rem;">MANUAL DRAW (1-80):</p>
     <div style="display: flex; gap: 5px;">
-        <input type="number" id="target1" placeholder="N1" style="width:30%">
-        <input type="number" id="target2" placeholder="N2" style="width:30%">
-        <input type="number" id="target3" placeholder="N3" style="width:30%">
+        <input type="number" id="res1" style="width: 30%">
+        <input type="number" id="res2" style="width: 30%">
+        <input type="number" id="res3" style="width: 30%">
     </div>
-    <button class="btn-red" onclick="putarSekarang()">PUTAR 3 ANGKA</button>
-    <button class="btn-red" style="background:black" onclick="resetRonde()">RESET RONDE</button>
-    <div class="riwayat-box" id="adminWDList" style="background:#000"></div>
+    <button class="btn-red" onclick="admPutar()">PUTAR SEKARANG</button>
+    <button class="btn-gold" onclick="resetRondeManual()">RESET RONDE</button>
+    
+    <h4 style="color: #e74c3c; margin-top: 20px; font-size: 0.8rem;">PERMINTAAN WD MASUK</h4>
+    <div class="list-container" id="admWDList" style="background: #000;"></div>
 </div>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyAkeywT1lnLHPLJUnfWGNtsSqiePttpzPo",
-        authDomain: "avatar-lotere.firebaseapp.com",
-        projectId: "avatar-lotere",
-        databaseURL: "https://avatar-lotere-default-rtdb.firebaseio.com" 
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const PIN = "#har142000";
-    let userSekarang = null;
-    let koinSekarang = 0;
-    let betSaya = 0;
+// --- CONFIG FIREBASE ---
+const firebaseConfig = {
+    apiKey: "AIzaSyAkeywT1lnLHPLJUnfWGNtsSqiePttpzPo",
+    authDomain: "avatar-lotere.firebaseapp.com",
+    projectId: "avatar-lotere",
+    databaseURL: "https://avatar-lotere-default-rtdb.firebaseio.com" 
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const PIN_ADMIN = "#har142000";
 
-    function switchTab(m) {
-        document.getElementById('contentGame').style.display = m==='GAME'?'block':'none';
-        document.getElementById('contentWD').style.display = m==='WD'?'block':'none';
-        document.getElementById('tabGame').className = m==='GAME'?'nav-active':'';
-        document.getElementById('tabWD').className = m==='WD'?'nav-active':'';
+let userUID = null;
+let userKoin = 0;
+let userTotalWin = 0;
+let isSpinning = false;
+
+// --- AUTH & CORE ---
+function prosesDaftar() {
+    if(prompt("PIN ADMIN:") !== PIN_ADMIN) return;
+    let id = document.getElementById('idPemain').value.trim();
+    let ps = document.getElementById('passPemain').value.trim();
+    if(id && ps) {
+        db.ref('users/' + id).set({ password: ps, coins: 0, totalWin: 0 });
+        alert("Terdaftar!");
     }
+}
 
-    function prosesDaftar() {
-        if(prompt("PIN Admin:") !== PIN) return alert("Salah!");
-        let id = document.getElementById('idPemain').value.trim();
-        let ps = document.getElementById('passPemain').value.trim();
-        if(!id || !ps) return alert("Isi ID & Pass!");
-        db.ref('users/' + id).set({ password: ps, coins: 0 }).then(() => alert("Akun Berhasil!"));
-    }
+function prosesLogin() {
+    let id = document.getElementById('idPemain').value.trim();
+    let ps = document.getElementById('passPemain').value.trim();
+    db.ref('users/' + id).once('value', s => {
+        let d = s.val();
+        if(d && d.password === ps) {
+            userUID = id;
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('gamePage').style.display = 'block';
+            document.getElementById('displayID').innerText = "👤 " + id;
+            initRealtime();
+        } else alert("Akses Ditolak!");
+    });
+}
 
-    function prosesLogin() {
-        let id = document.getElementById('idPemain').value.trim();
-        let ps = document.getElementById('passPemain').value.trim();
-        db.ref('users/' + id).once('value', (s) => {
-            let d = s.val();
-            if(d && d.password === ps) {
-                userSekarang = id;
-                document.getElementById('loginPage').style.display = 'none';
-                document.getElementById('gamePage').style.display = 'block';
-                document.getElementById('namaPemain').innerText = "👤 " + id;
-                mulaiPantau();
-            } else alert("Gagal!");
-        });
-    }
+function showSection(s) {
+    document.getElementById('secGame').style.display = s==='GAME'?'block':'none';
+    document.getElementById('secLead').style.display = s==='LEAD'?'block':'none';
+    document.getElementById('secWD').style.display = s==='WD'?'block':'none';
+    document.getElementById('tabG').className = s==='GAME'?'tab active':'tab';
+    document.getElementById('tabL').className = s==='LEAD'?'tab active':'tab';
+    document.getElementById('tabW').className = s==='WD'?'tab active':'tab';
+}
 
-    function mulaiPantau() {
-        db.ref('users/' + userSekarang + '/coins').on('value', (s) => {
-            koinSekarang = s.val() || 0;
-            document.getElementById('koinPemain').innerText = "💰 " + koinSekarang;
-        });
-        db.ref('roomControl').on('value', (s) => {
-            let d = s.val();
-            if(d && d.action === 'SPIN') animasiPutar(d.results); // Sekarang pakai results (array)
-            if(d && d.action === 'RESET') location.reload();
-        });
-        db.ref('guesses').on('value', (s) => {
-            let data = s.val();
-            let html = "";
-            if(data) {
-                Object.keys(data).forEach(id => {
-                    html += `<div class="riwayat-item"><span>${id} (Bet:${data[id].bet})</span> <b>${data[id].guess}</b></div>`;
-                });
-            }
-            document.getElementById('listTebakan').innerHTML = html || "Kosong.";
-        });
-        db.ref('withdraws').on('value', (s) => {
-            let data = s.val();
-            let htmlSaya = ""; let htmlAdmin = "";
-            if(data) {
-                Object.keys(data).forEach(key => {
-                    let wd = data[key];
-                    if(wd.user === userSekarang) htmlSaya += `<div class="riwayat-item"><span>${wd.amount} Koin</span> <small>Pending</small></div>`;
-                    htmlAdmin += `<div class="riwayat-item" style="font-size:0.7rem;"><span>${wd.user}: ${wd.amount}</span> <button onclick="hapusWD('${key}')" style="background:red; width:auto; padding:2px">X</button></div>`;
-                });
-            }
-            document.getElementById('myWDList').innerHTML = htmlSaya || "Belum ada WD.";
-            document.getElementById('adminWDList').innerHTML = htmlAdmin || "Tidak ada WD.";
-        });
-    }
+function initRealtime() {
+    db.ref('users/' + userUID).on('value', s => {
+        let d = s.val();
+        if(!d) return;
+        userKoin = d.coins || 0;
+        userTotalWin = d.totalWin || 0;
+        document.getElementById('displayKoin').innerText = "💰 " + userKoin;
+    });
 
-    function kunciJawaban() {
-        let t = document.getElementById('tebakan').value;
-        let b = parseInt(document.getElementById('jumlahBet').value);
-        if(!t || b < 1 || b > 200 || koinSekarang < b) return alert("Cek saldo/bet!");
-        betSaya = b;
-        db.ref('users/' + userSekarang).update({ coins: koinSekarang - b });
-        db.ref('guesses/' + userSekarang).set({ name: userSekarang, guess: t, bet: b });
-        document.getElementById('btnKunci').disabled = true;
-        document.getElementById('btnKunci').innerText = "TERKUNCI";
-    }
+    db.ref('roomControl').on('value', s => {
+        let d = s.val();
+        if(d && d.action === 'SPIN' && !isSpinning) runAnimation(d.results);
+    });
 
-    function prosesWithdraw() {
-        let a = parseInt(document.getElementById('wdAmount').value);
-        if(!a || a < 1 || a > 2000 || koinSekarang < a) return alert("Error WD!");
-        db.ref('users/' + userSekarang).update({ coins: koinSekarang - a });
-        db.ref('withdraws').push({ user: userSekarang, amount: a, time: Date.now() });
-        alert("WD Dikirim!");
-    }
-
-    function hapusWD(k) { if(confirm("Hapus?")) db.ref('withdraws/' + k).remove(); }
-    function bukaAdmin() { if(prompt("PIN Admin:") === PIN) document.getElementById('adminPanel').style.display = 'block'; }
-    function tambahKoin() {
-        let id = document.getElementById('idKoin').value.trim();
-        let jm = parseInt(document.getElementById('jmlKoin').value);
-        db.ref('users/' + id + '/coins').once('value', (s) => {
-            let skrg = s.val() || 0;
-            db.ref('users/' + id).update({ coins: skrg + jm });
-        });
-    }
-
-    function putarSekarang() {
-        let r1 = document.getElementById('target1').value;
-        let r2 = document.getElementById('target2').value;
-        let r3 = document.getElementById('target3').value;
-        if(!r1 || !r2 || !r3) return alert("Isi 3 angka!");
-        db.ref('roomControl').set({ 
-            action: 'SPIN', 
-            results: [parseInt(r1), parseInt(r2), parseInt(r3)] 
-        });
-    }
-
-    function animasiPutar(hasilArray) {
-        let lay = document.getElementById('layarAngka');
-        let c = 0;
-        let inv = setInterval(() => {
-            let n1 = Math.floor(Math.random() * 100) + 1;
-            let n2 = Math.floor(Math.random() * 100) + 1;
-            let n3 = Math.floor(Math.random() * 100) + 1;
-            lay.innerText = `${n1} - ${n2} - ${n3}`;
-            c++;
-            if(c > 40) {
-                clearInterval(inv);
-                lay.innerText = `${hasilArray[0]} - ${hasilArray[1]} - ${hasilArray[2]}`;
-                
-                let t = parseInt(document.getElementById('tebakan').value);
-                // Cek apakah tebakan ada di salah satu dari 3 angka
-                if(hasilArray.includes(t)) {
-                    let win = betSaya * 5;
-                    alert("MENANG! Angka cocok! 💰" + win);
-                    db.ref('users/' + userSekarang).update({ coins: koinSekarang + win });
-                }
-            }
-        }, 50);
-    }
-
-    function resetRonde() {
-        if(confirm("Reset?")) {
-            db.ref('guesses').remove();
-            db.ref('roomControl').set({ action: 'RESET' });
+    db.ref('guesses').on('value', s => {
+        let data = s.val();
+        let h = "";
+        if(data) {
+            Object.keys(data).forEach(u => {
+                let g = data[u];
+                h += `<div class="list-item"><span>${u}</span><span>[${g.g1}] [${g.g2}]</span></div>`;
+            });
         }
+        document.getElementById('listTebakan').innerHTML = h || "Menunggu tebakan...";
+    });
+
+    db.ref('users').orderByChild('coins').limitToLast(10).on('value', s => {
+        let arr = []; s.forEach(x => { arr.push({id: x.key, val: x.val().coins}) });
+        renderLeader(arr.reverse(), 'leadSaldo');
+    });
+
+    db.ref('users').orderByChild('totalWin').limitToLast(10).on('value', s => {
+        let arr = []; s.forEach(x => { arr.push({id: x.key, val: x.val().totalWin}) });
+        renderLeader(arr.reverse(), 'leadWin');
+    });
+
+    // SISTEM WD TERPADU
+    db.ref('withdraws').on('value', s => {
+        let d = s.val();
+        let hUser = ""; let hAdm = "";
+        if(d) {
+            Object.keys(d).forEach(k => {
+                let w = d[k];
+                let color = w.status === "PENDING" ? "#f1c40f" : "#2ecc71";
+                if(w.user === userUID) {
+                    hUser += `<div class="list-item"><span>💰 ${w.amount}</span><span style="color:${color}">${w.status}</span></div>`;
+                }
+                
+                if(w.status === "PENDING") {
+                    hAdm += `<div class="list-item" style="flex-direction:column; align-items:flex-start; border-bottom:1px solid #444; padding:10px 0;">
+                        <span><b>${w.user}</b>: ${w.amount} Koin</span>
+                        <div style="display:flex; gap:5px; margin-top:5px; width:100%">
+                            <button onclick="accWD('${k}')" style="background:#2ecc71; padding:5px; margin:0; font-size:0.6rem">SETUJUI</button>
+                            <button onclick="rejectWD('${k}', '${w.user}', ${w.amount})" style="background:#e74c3c; padding:5px; margin:0; font-size:0.6rem">TOLAK</button>
+                        </div>
+                    </div>`;
+                } else {
+                    hAdm += `<div class="list-item" style="opacity:0.5; font-size:0.7rem">
+                        <span>${w.user} (${w.amount}) - OK</span>
+                        <button onclick="db.ref('withdraws/${k}').remove()" style="width:20px; padding:0; margin:0">X</button>
+                    </div>`;
+                }
+            });
+        }
+        document.getElementById('myWDList').innerHTML = hUser || "Belum ada riwayat.";
+        document.getElementById('admWDList').innerHTML = hAdm || "Tidak ada antrean.";
+    });
+
+    setInterval(updateTimer, 1000);
+}
+
+function renderLeader(data, target) {
+    let h = "";
+    data.forEach((p, i) => {
+        h += `<div class="list-item"><span>${i+1}. ${p.id}</span><b>${p.val}</b></div>`;
+    });
+    document.getElementById(target).innerHTML = h;
+}
+
+// --- GAMEPLAY ---
+function kunciGanda() {
+    let g1 = parseInt(document.getElementById('tebak1').value);
+    let b1 = parseInt(document.getElementById('bet1').value);
+    let g2 = parseInt(document.getElementById('tebak2').value);
+    let b2 = parseInt(document.getElementById('bet2').value);
+
+    if(!g1 || !b1 || g1 > 80 || g1 < 1) return alert("Jawaban 1 tidak valid (1-80)");
+    let totalBet = b1 + (b2 || 0);
+    if(userKoin < totalBet) return alert("Koin tidak cukup!");
+
+    db.ref('users/' + userUID).update({ coins: userKoin - totalBet });
+    db.ref('guesses/' + userUID).set({ g1: g1, b1: b1, g2: g2 || 0, b2: b2 || 0 });
+    document.getElementById('btnKunci').disabled = true;
+    document.getElementById('btnKunci').innerText = "LOCKED";
+}
+
+function runAnimation(res) {
+    isSpinning = true;
+    let lay = document.getElementById('layarAngka');
+    let c = 0;
+    let inv = setInterval(() => {
+        lay.innerText = `${rand80()} - ${rand80()} - ${rand80()}`;
+        c++;
+        if(c > 40) {
+            clearInterval(inv);
+            lay.innerText = `${res[0]} - ${res[1]} - ${res[2]}`;
+            checkWinner(res);
+            setTimeout(() => { isSpinning = false; }, 5000);
+        }
+    }, 50);
+}
+
+function rand80() { return Math.floor(Math.random() * 80) + 1; }
+
+function checkWinner(res) {
+    db.ref('guesses/' + userUID).once('value', s => {
+        let d = s.val();
+        if(!d) return;
+        let winPrize = 0;
+        if(res.includes(parseInt(d.g1))) winPrize += d.b1 * 5;
+        if(res.includes(parseInt(d.g2)) && d.g2 !== 0) winPrize += d.b2 * 5;
+        if(winPrize > 0) {
+            alert("JACKPOT! 💰" + winPrize);
+            db.ref('users/' + userUID).update({ 
+                coins: userKoin + winPrize,
+                totalWin: userTotalWin + winPrize
+            });
+        }
+    });
+}
+
+// --- AUTO DRAW ---
+function updateTimer() {
+    const now = new Date();
+    const times = ["09:00", "21:00"];
+    let next = null;
+    for (let t of times) {
+        let [h, m] = t.split(':');
+        let target = new Date();
+        target.setHours(h, m, 0);
+        if (target > now) { next = target; break; }
     }
+    if (!next) {
+        next = new Date(); next.setDate(next.getDate() + 1); next.setHours(9, 0, 0);
+    }
+    let diff = next - now;
+    let hrs = Math.floor(diff/3600000).toString().padStart(2,'0');
+    let mins = Math.floor((diff%3600000)/60000).toString().padStart(2,'0');
+    let secs = Math.floor((diff%60000)/1000).toString().padStart(2,'0');
+    document.getElementById('nextDraw').innerText = `NEXT DRAW: ${hrs}:${mins}:${secs}`;
+    if(diff <= 1000 && !isSpinning) triggerAutoSpin();
+}
+
+function triggerAutoSpin() {
+    db.ref('roomControl/action').once('value', s => {
+        if(s.val() !== 'SPIN') {
+            db.ref('roomControl').set({ action: 'SPIN', results: [rand80(), rand80(), rand80()] });
+            setTimeout(resetRondeManual, 10000);
+        }
+    });
+}
+
+// --- WD SYSTEM FUNCTIONS ---
+function prosesWithdraw() {
+    let a = parseInt(document.getElementById('wdAmount').value);
+    if(a > 0 && a <= 2000 && userKoin >= a) {
+        db.ref('users/'+userUID).update({ coins: userKoin - a });
+        db.ref('withdraws').push({
+            user: userUID,
+            amount: a,
+            status: "PENDING",
+            time: new Date().toLocaleString()
+        });
+        document.getElementById('wdAmount').value = "";
+        alert("WD Pending! Menunggu Admin.");
+    } else alert("Cek saldo/nominal!");
+}
+
+function accWD(key) {
+    if(confirm("Selesaikan WD ini?")) {
+        db.ref('withdraws/' + key).update({ status: "SUKSES" });
+    }
+}
+
+function rejectWD(key, uid, amount) {
+    if(confirm("Tolak WD dan kembalikan koin?")) {
+        db.ref('users/' + uid + '/coins').once('value', s => {
+            let current = s.val() || 0;
+            db.ref('users/' + uid).update({ coins: current + amount });
+            db.ref('withdraws/' + key).remove();
+            alert("WD Ditolak, koin dikembalikan.");
+        });
+    }
+}
+
+// --- ADMIN ---
+function bukaAdmin() { if(prompt("PIN:") === PIN_ADMIN) document.getElementById('adminPanel').style.display = 'block'; }
+function admKoin() {
+    let id = document.getElementById('admID').value;
+    let qty = parseInt(document.getElementById('admQty').value);
+    db.ref('users/'+id+'/coins').once('value', s => {
+        db.ref('users/'+id).update({ coins: (s.val()||0) + qty });
+        alert("Koin Berhasil Ditambah!");
+    });
+}
+function admPutar() {
+    let r1 = parseInt(document.getElementById('res1').value);
+    let r2 = parseInt(document.getElementById('res2').value);
+    let r3 = parseInt(document.getElementById('res3').value);
+    if(!r1 || !r2 || !r3) return alert("Isi 3 angka!");
+    db.ref('roomControl').set({ action: 'SPIN', results: [r1, r2, r3] });
+}
+function resetRondeManual() {
+    db.ref('guesses').remove();
+    db.ref('roomControl').remove();
+    document.getElementById('btnKunci').disabled = false;
+    document.getElementById('btnKunci').innerText = "KUNCI SEMUA JAWABAN";
+}
 </script>
 </body>
 </html>
