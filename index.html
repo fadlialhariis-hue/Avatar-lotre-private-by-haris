@@ -135,7 +135,7 @@ let userKoin = 0;
 let userTotalWin = 0;
 let isSpinning = false;
 
-// --- AUTH & CORE ---
+// --- AUTH ---
 function prosesDaftar() {
     if(prompt("PIN ADMIN:") !== PIN_ADMIN) return;
     let id = document.getElementById('idPemain').value.trim();
@@ -155,7 +155,7 @@ function prosesLogin() {
             userUID = id;
             document.getElementById('loginPage').style.display = 'none';
             document.getElementById('gamePage').style.display = 'block';
-            document.getElementById('displayID').innerText = "👤 " + id;
+            document.getElementById('displayID').innerText = "👤 " + id.toUpperCase();
             initRealtime();
         } else alert("Akses Ditolak!");
     });
@@ -171,6 +171,7 @@ function showSection(s) {
 }
 
 function initRealtime() {
+    // Pantau Data User Sendiri
     db.ref('users/' + userUID).on('value', s => {
         let d = s.val();
         if(!d) return;
@@ -179,34 +180,51 @@ function initRealtime() {
         document.getElementById('displayKoin').innerText = "💰 " + userKoin;
     });
 
+    // Pantau Perintah Putar (Spin)
     db.ref('roomControl').on('value', s => {
         let d = s.val();
         if(d && d.action === 'SPIN' && !isSpinning) runAnimation(d.results);
     });
 
+    // PANTAU TARUHAN GLOBAL (LIVE BETS) - MENAMPILKAN KOIN TIAP TEBAKAN
     db.ref('guesses').on('value', s => {
         let data = s.val();
         let h = "";
         if(data) {
             Object.keys(data).forEach(u => {
                 let g = data[u];
-                h += `<div class="list-item"><span>${u}</span><span>[${g.g1}] [${g.g2}]</span></div>`;
+                let detail = `🎯 [${g.g1}] Bet: 💰${g.b1}`;
+                if(g.g2 && g.g2 !== 0) {
+                    detail += `<br>🎯 [${g.g2}] Bet: 💰${g.b2}`;
+                }
+
+                h += `<div class="list-item" style="border-bottom:1px solid #333; padding:8px 0;">
+                        <div style="text-align:left;">
+                            <span style="color:gold; font-weight:bold; font-size:0.8rem;">👤 ${u.toUpperCase()}</span>
+                            <div style="font-size:0.7rem; color:#ccc; margin-top:2px;">${detail}</div>
+                        </div>
+                        <div style="align-self:center;">
+                            <span style="font-size:0.55rem; background:#333; padding:2px 4px; border-radius:3px;">LOCKED</span>
+                        </div>
+                      </div>`;
             });
         }
         document.getElementById('listTebakan').innerHTML = h || "Menunggu tebakan...";
     });
 
+    // Leaderboard Saldo
     db.ref('users').orderByChild('coins').limitToLast(10).on('value', s => {
         let arr = []; s.forEach(x => { arr.push({id: x.key, val: x.val().coins}) });
         renderLeader(arr.reverse(), 'leadSaldo');
     });
 
+    // Leaderboard Kemenangan
     db.ref('users').orderByChild('totalWin').limitToLast(10).on('value', s => {
         let arr = []; s.forEach(x => { arr.push({id: x.key, val: x.val().totalWin}) });
         renderLeader(arr.reverse(), 'leadWin');
     });
 
-    // SISTEM WD TERPADU
+    // Pantau WD
     db.ref('withdraws').on('value', s => {
         let d = s.val();
         let hUser = ""; let hAdm = "";
@@ -217,25 +235,19 @@ function initRealtime() {
                 if(w.user === userUID) {
                     hUser += `<div class="list-item"><span>💰 ${w.amount}</span><span style="color:${color}">${w.status}</span></div>`;
                 }
-                
                 if(w.status === "PENDING") {
-                    hAdm += `<div class="list-item" style="flex-direction:column; align-items:flex-start; border-bottom:1px solid #444; padding:10px 0;">
+                    hAdm += `<div class="list-item" style="flex-direction:column; align-items:flex-start; padding:10px 0;">
                         <span><b>${w.user}</b>: ${w.amount} Koin</span>
                         <div style="display:flex; gap:5px; margin-top:5px; width:100%">
                             <button onclick="accWD('${k}')" style="background:#2ecc71; padding:5px; margin:0; font-size:0.6rem">SETUJUI</button>
                             <button onclick="rejectWD('${k}', '${w.user}', ${w.amount})" style="background:#e74c3c; padding:5px; margin:0; font-size:0.6rem">TOLAK</button>
                         </div>
                     </div>`;
-                } else {
-                    hAdm += `<div class="list-item" style="opacity:0.5; font-size:0.7rem">
-                        <span>${w.user} (${w.amount}) - OK</span>
-                        <button onclick="db.ref('withdraws/${k}').remove()" style="width:20px; padding:0; margin:0">X</button>
-                    </div>`;
                 }
             });
         }
         document.getElementById('myWDList').innerHTML = hUser || "Belum ada riwayat.";
-        document.getElementById('admWDList').innerHTML = hAdm || "Tidak ada antrean.";
+        document.getElementById('admWDList').innerHTML = hAdm || "Antrean kosong.";
     });
 
     setInterval(updateTimer, 1000);
@@ -244,7 +256,7 @@ function initRealtime() {
 function renderLeader(data, target) {
     let h = "";
     data.forEach((p, i) => {
-        h += `<div class="list-item"><span>${i+1}. ${p.id}</span><b>${p.val}</b></div>`;
+        h += `<div class="list-item"><span>${i+1}. ${p.id.toUpperCase()}</span><b>${p.val}</b></div>`;
     });
     document.getElementById(target).innerHTML = h;
 }
@@ -256,14 +268,15 @@ function kunciGanda() {
     let g2 = parseInt(document.getElementById('tebak2').value);
     let b2 = parseInt(document.getElementById('bet2').value);
 
-    if(!g1 || !b1 || g1 > 80 || g1 < 1) return alert("Jawaban 1 tidak valid (1-80)");
+    if(!g1 || !b1 || g1 > 80 || g1 < 1) return alert("Angka 1 harus 1-80!");
     let totalBet = b1 + (b2 || 0);
     if(userKoin < totalBet) return alert("Koin tidak cukup!");
 
     db.ref('users/' + userUID).update({ coins: userKoin - totalBet });
     db.ref('guesses/' + userUID).set({ g1: g1, b1: b1, g2: g2 || 0, b2: b2 || 0 });
+    
     document.getElementById('btnKunci').disabled = true;
-    document.getElementById('btnKunci').innerText = "LOCKED";
+    document.getElementById('btnKunci').innerText = "NUMBERS LOCKED";
 }
 
 function runAnimation(res) {
@@ -272,8 +285,7 @@ function runAnimation(res) {
     let c = 0;
     let inv = setInterval(() => {
         lay.innerText = `${rand80()} - ${rand80()} - ${rand80()}`;
-        c++;
-        if(c > 40) {
+        if(++c > 40) {
             clearInterval(inv);
             lay.innerText = `${res[0]} - ${res[1]} - ${res[2]}`;
             checkWinner(res);
@@ -291,8 +303,9 @@ function checkWinner(res) {
         let winPrize = 0;
         if(res.includes(parseInt(d.g1))) winPrize += d.b1 * 5;
         if(res.includes(parseInt(d.g2)) && d.g2 !== 0) winPrize += d.b2 * 5;
+        
         if(winPrize > 0) {
-            alert("JACKPOT! 💰" + winPrize);
+            alert("JACKPOT! Anda menang 💰" + winPrize);
             db.ref('users/' + userUID).update({ 
                 coins: userKoin + winPrize,
                 totalWin: userTotalWin + winPrize
@@ -301,25 +314,24 @@ function checkWinner(res) {
     });
 }
 
-// --- AUTO DRAW ---
+// --- AUTO SYSTEM ---
 function updateTimer() {
     const now = new Date();
-    const times = ["09:00", "21:00"];
+    const schedules = ["09:00", "21:00"];
     let next = null;
-    for (let t of times) {
+    for (let t of schedules) {
         let [h, m] = t.split(':');
-        let target = new Date();
-        target.setHours(h, m, 0);
+        let target = new Date(); target.setHours(h, m, 0);
         if (target > now) { next = target; break; }
     }
-    if (!next) {
-        next = new Date(); next.setDate(next.getDate() + 1); next.setHours(9, 0, 0);
-    }
+    if (!next) { next = new Date(); next.setDate(next.getDate() + 1); next.setHours(9, 0, 0); }
+    
     let diff = next - now;
     let hrs = Math.floor(diff/3600000).toString().padStart(2,'0');
     let mins = Math.floor((diff%3600000)/60000).toString().padStart(2,'0');
     let secs = Math.floor((diff%60000)/1000).toString().padStart(2,'0');
     document.getElementById('nextDraw').innerText = `NEXT DRAW: ${hrs}:${mins}:${secs}`;
+    
     if(diff <= 1000 && !isSpinning) triggerAutoSpin();
 }
 
@@ -332,55 +344,43 @@ function triggerAutoSpin() {
     });
 }
 
-// --- WD SYSTEM FUNCTIONS ---
+// --- WD & ADMIN ---
 function prosesWithdraw() {
     let a = parseInt(document.getElementById('wdAmount').value);
     if(a > 0 && a <= 2000 && userKoin >= a) {
         db.ref('users/'+userUID).update({ coins: userKoin - a });
-        db.ref('withdraws').push({
-            user: userUID,
-            amount: a,
-            status: "PENDING",
-            time: new Date().toLocaleString()
-        });
+        db.ref('withdraws').push({ user: userUID, amount: a, status: "PENDING" });
         document.getElementById('wdAmount').value = "";
-        alert("WD Pending! Menunggu Admin.");
-    } else alert("Cek saldo/nominal!");
+        alert("WD Berhasil diajukan!");
+    } else alert("Nominal tidak valid!");
 }
 
 function accWD(key) {
-    if(confirm("Selesaikan WD ini?")) {
-        db.ref('withdraws/' + key).update({ status: "SUKSES" });
-    }
+    if(confirm("Setujui penarikan ini?")) db.ref('withdraws/' + key).update({ status: "SUKSES" });
 }
 
 function rejectWD(key, uid, amount) {
-    if(confirm("Tolak WD dan kembalikan koin?")) {
+    if(confirm("Tolak penarikan dan kembalikan koin?")) {
         db.ref('users/' + uid + '/coins').once('value', s => {
-            let current = s.val() || 0;
-            db.ref('users/' + uid).update({ coins: current + amount });
+            db.ref('users/' + uid).update({ coins: (s.val() || 0) + amount });
             db.ref('withdraws/' + key).remove();
-            alert("WD Ditolak, koin dikembalikan.");
         });
     }
 }
 
-// --- ADMIN ---
 function bukaAdmin() { if(prompt("PIN:") === PIN_ADMIN) document.getElementById('adminPanel').style.display = 'block'; }
 function admKoin() {
-    let id = document.getElementById('admID').value;
+    let id = document.getElementById('admID').value.toLowerCase();
     let qty = parseInt(document.getElementById('admQty').value);
     db.ref('users/'+id+'/coins').once('value', s => {
         db.ref('users/'+id).update({ coins: (s.val()||0) + qty });
-        alert("Koin Berhasil Ditambah!");
+        alert("Koin ditambahkan!");
     });
 }
 function admPutar() {
-    let r1 = parseInt(document.getElementById('res1').value);
-    let r2 = parseInt(document.getElementById('res2').value);
-    let r3 = parseInt(document.getElementById('res3').value);
-    if(!r1 || !r2 || !r3) return alert("Isi 3 angka!");
-    db.ref('roomControl').set({ action: 'SPIN', results: [r1, r2, r3] });
+    let r = [parseInt(document.getElementById('res1').value), parseInt(document.getElementById('res2').value), parseInt(document.getElementById('res3').value)];
+    if(r.some(isNaN)) return alert("Isi 3 angka hasil!");
+    db.ref('roomControl').set({ action: 'SPIN', results: r });
 }
 function resetRondeManual() {
     db.ref('guesses').remove();
